@@ -1,0 +1,8 @@
+# Data
+*.txt
+*.gz
+*.tsv
+*.csv
+
+# R related
+Rplots.pdf
