@@ -6,11 +6,14 @@ library('latex2exp');
 INFINIUM_PATH  <- 'Infinium450k_raw_data.txt';
 ANNO_MINI_PATH <- 'HumanMethylation450_anno_mini.csv';
 NB_CASES <- 3
-NB_CONTROLS <- 3
+NB_CONTROLS <- NB_CASES
 CONTROLS <- 1:NB_CONTROLS
 CASES <- (1:NB_CASES) + NB_CONTROLS;
 ALL_CHROMOSOMES <- c(1:22, 'X', 'Y');
 CHROMOSOMES_TO_TEST <- 19:21;
+
+LOG_P_VALUE_THRESHOLD <- -3;
+DELTA_BETA_THRESHOLD <- .2;
 
 # For Infinium array, `signal A` is the unmethylated probe and
 # `signal B` is the methylated probe
@@ -63,8 +66,8 @@ plot.mean.methylation.level <- function(infinium, annotations) {
 	for(chromosome in ALL_CHROMOSOMES) {
 		intersection <- intersect(rownames(infinium), rownames(extract.chromosome(annotations, chromosome)));
 		chromosome.infinium.subtable <- infinium[intersection,];
-		for(case.sampel.id in CASES)
-			means[1,idx] <- means[1,idx] + mean(get.beta(chromosome.infinium.subtable, case.sampel.id))/NB_CASES;
+		for(case.sample.id in CASES)
+			means[1,idx] <- means[1,idx] + mean(get.beta(chromosome.infinium.subtable, case.sample.id))/NB_CASES;
 		for(control.sample.id in CONTROLS)
 			means[2,idx] <- means[2,idx] + mean(get.beta(chromosome.infinium.subtable, control.sample.id))/NB_CONTROLS;
 		idx <- idx+1;
@@ -73,7 +76,7 @@ plot.mean.methylation.level <- function(infinium, annotations) {
 	barplot(means[,CHROMOSOMES_TO_TEST], names.arg=CHROMOSOMES_TO_TEST, beside=T, legend=c('Cases', 'Controls'), las=1);
 }
 
-# ...
+# Plot the histograms of the distribution and log-distribution of the number of probes per gene
 plot.number.of.genes.per.probe <- function(annotations) {
 	non.null.genes.associations <- as.vector(annotations[annotations$UCSC_RefGene_Name != '',]$UCSC_RefGene_Name);
 	genes.counter <- table(unlist(sapply(non.null.genes.associations, function(s) {unique(strsplit(s, ';'))})));
@@ -86,9 +89,92 @@ plot.number.of.genes.per.probe <- function(annotations) {
 		ylab='log(Frequency)');
 }
 
+# Get the $\Delta\beta$ vector of a (control, sample) couple
+get.delta.beta <- function(infinium, case.sample.id, control.sample.id) {
+	return (get.beta(infinium, control.sample.id) - get.beta(infinium, case.sample.id));
+}
+
+# Plots the density of $\Delta\beta$ for each (control, sample) couple
+plot.delta.beta.distribution <- function(infinium) {
+	infinium = infinium[1:500,]
+	# plot \Delta \beta distribution for each couple control/case
+	for(control.sample.id in CONTROLS) {
+		case.sample.id <- control.sample.id + NB_CONTROLS;
+		infinium$de
+		plot(
+			density(get.delta.beta(infinium, case.sample.id, control.sample.id)),
+			main=TeX(sprintf('$\\Delta\\beta$ (control - case) for couple #%d', control.sample.id)),
+			xlab=TeX('$\\Delta\\beta$'),
+			ylab='Density',
+			xlim=c(-1, 1),
+			ylim=c(0, 5.5)
+		);
+	}
+	# Plot \Delta \beta for the mean of all samples
+	delta.betas <- matrix(0, nrow=nrow(infinium), ncol=NB_CONTROLS+NB_CASES);
+	for(control.sample.id in CONTROLS) {
+		delta.betas[,control.sample.id] <- get.beta(infinium, control.sample.id);
+		case.sample.id <- control.sample.id + NB_CONTROLS;
+		delta.betas[,case.sample.id] <- get.beta(infinium, case.sample.id);
+	}
+	infinium$delta.beta <- apply(delta.betas[,CONTROLS], 1, mean) - apply(delta.betas[,CASES], 1, mean);
+	plot(
+		density(infinium$delta.beta),
+		main=TeX('mean $\\Delta\\beta$ (controls - cases)'),
+		xlab=TeX('$\\Delta\\beta$'),
+		ylab='Density',
+		xlim=c(-1, 1),
+		ylim=c(0, 5.5)
+	);
+	infinium$p.values <- apply(delta.betas, 1,
+		function(row) {
+			return (t.test(row[CONTROLS], row[CASES])$p.value);
+		}
+	);
+	infinium$log.p.value <- log(infinium$p.value, 10);
+	plot(
+		density(infinium$p.values),
+		main=TeX('$p$-value density'),
+		xlab=TeX('$p$-value'),
+		ylab='density'
+	);
+	plot(
+		density(-infinium$log.p.value),
+		main=TeX('$-\\log_{10}(p$-value$)$ density'),
+		xlab=TeX('$-\\log_{10}(p$-value$)$'),
+		ylab='density'
+	);
+	return (infinium);
+}
+
+plot.volcano <- function(infinium) {
+	significant.idx <- as.logical((abs(infinium$delta.beta) >= .2) * (infinium$log.p.value <= -3));
+	significant <- infinium[significant.idx,];
+	non.significant <- infinium[!significant.idx,];
+	plot(
+		c(non.significant$delta.beta, significant$delta.beta),
+		-c(non.significant$log.p.value, significant$log.p.value),
+		col=c(rep('black', nrow(non.significant)), rep('red', nrow(significant))),
+		xlab=TeX('$\\Delta\\beta$'),
+		ylab=TeX('$-\\log_{10}(p$-value$)$')
+	)
+	lines(c(min(infinium$delta.beta), max(infinium$delta.beta)), rep(-LOG_P_VALUE_THRESHOLD, 2), col='grey', lty=2)
+	lines(rep(DELTA_BETA_THRESHOLD, 2), c(min(-infinium$log.p.value), max(-infinium$log.p.value)), col='grey', lty=2)
+	lines(rep(-DELTA_BETA_THRESHOLD, 2), c(min(-infinium$log.p.value), max(-infinium$log.p.value)), col='grey', lty=2)
+}
+
+get.top.delta.beta <- function(infinium, n=20) {
+	return (infinium[order(abs(infinium$delta.beta), decreasing=T)[1:n],]);
+}
+
+
 # Use first column as row names
 infinium <- read.table(INFINIUM_PATH, header=T, dec=',', row.names=1);
 annotations <- read.table(ANNO_MINI_PATH, header=T, sep=',', row.names=1);
-plot.beta.distribution.infinium(infinium);
-plot.mean.methylation.level(infinium, annotations);
-plot.number.of.genes.per.probe(annotations);
+
+# Plots
+#plot.beta.distribution.infinium(infinium);
+#plot.mean.methylation.level(infinium, annotations);
+#plot.number.of.genes.per.probe(annotations);
+infinium <- plot.delta.beta.distribution(infinium);
+plot.volcano(infinium);
