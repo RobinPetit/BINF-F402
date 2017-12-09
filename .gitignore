@@ -7,8 +7,13 @@
 *.tsv
 *.csv
 
+# TeX
+*.log
+*.aux
+*.toc
+
 # Directories
-Assignment?/*
+Assignment1/plots
 instructions/*
 
 # R related
