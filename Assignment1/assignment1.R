@@ -97,7 +97,6 @@ get.delta.beta <- function(infinium, case.sample.id, control.sample.id) {
 
 # Plots the density of $\Delta\beta$ for each (control, sample) couple
 plot.delta.beta.distribution <- function(infinium) {
-	infinium = infinium[1:500,]
 	# plot \Delta \beta distribution for each couple control/case
 	for(control.sample.id in CONTROLS) {
 		case.sample.id <- control.sample.id + NB_CONTROLS;
@@ -184,9 +183,9 @@ infinium <- read.table(INFINIUM_PATH, header=T, dec=',', row.names=1);
 annotations <- read.table(ANNO_MINI_PATH, header=T, sep=',', row.names=1);
 
 # Plots
-#plot.beta.distribution.infinium(infinium);
-#plot.mean.methylation.level(infinium, annotations);
-#plot.number.of.genes.per.probe(annotations);
+plot.beta.distribution.infinium(infinium);
+plot.mean.methylation.level(infinium, annotations);
+plot.number.of.genes.per.probe(annotations);
 infinium <- plot.delta.beta.distribution(infinium);
 plot.volcano(infinium);
 plot.heatmap(infinium);
