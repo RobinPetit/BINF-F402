@@ -2,6 +2,7 @@
 
 # Lib necessary to use LaTeX in plots
 library('latex2exp');
+library('gplots');  # for heatmap.2
 
 INFINIUM_PATH  <- 'Infinium450k_raw_data.txt';
 ANNO_MINI_PATH <- 'HumanMethylation450_anno_mini.csv';
@@ -163,10 +164,20 @@ plot.volcano <- function(infinium) {
 	lines(rep(-DELTA_BETA_THRESHOLD, 2), c(min(-infinium$log.p.value), max(-infinium$log.p.value)), col='grey', lty=2)
 }
 
-get.top.delta.beta <- function(infinium, n=20) {
+get.top.delta.beta <- function(infinium, n=30) {
 	return (infinium[order(abs(infinium$delta.beta), decreasing=T)[1:n],]);
 }
 
+plot.heatmap <- function(infinium) {
+	top <- get.top.delta.beta(infinium);
+	par(mar=c(0, 1, 3, 1))
+	heatmap.2(t(as.matrix(top[,1:(2*(NB_CONTROLS+NB_CASES))])), Rowv=NA, Colv=NA, scale='none', cexRow=.8, cexCol=.75,
+		margins=c(6, 8), dendogram='none', trace='none');
+	for(i in 1:2) {
+		heatmap.2(t(as.matrix(top[,seq(i, 2*(NB_CONTROLS+NB_CASES),2)])), Rowv=NA, Colv=NA, scale='none', cexRow=.8, cexCol=.75,
+			margins=c(6, 8), dendogram='none', trace='none');
+	}
+}
 
 # Use first column as row names
 infinium <- read.table(INFINIUM_PATH, header=T, dec=',', row.names=1);
@@ -178,3 +189,4 @@ annotations <- read.table(ANNO_MINI_PATH, header=T, sep=',', row.names=1);
 #plot.number.of.genes.per.probe(annotations);
 infinium <- plot.delta.beta.distribution(infinium);
 plot.volcano(infinium);
+plot.heatmap(infinium);
