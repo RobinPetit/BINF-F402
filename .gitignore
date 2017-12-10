@@ -11,6 +11,11 @@
 *.log
 *.aux
 *.toc
+*.bbl
+*.ps
+*.dvi
+*.blg
+*.out
 
 # Directories
 Assignment1/plots

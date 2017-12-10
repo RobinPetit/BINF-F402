@@ -10,6 +10,7 @@ NB_CASES <- 3
 NB_CONTROLS <- NB_CASES
 CONTROLS <- 1:NB_CONTROLS
 CASES <- (1:NB_CASES) + NB_CONTROLS;
+ALPHA_PSEUDO_COUNT <- 100  # see: Du et al., Comparison of Beta-value and M-value methods for quantifying methylation levels by microarray analysis, 2010
 ALL_CHROMOSOMES <- c(1:22, 'X', 'Y');
 CHROMOSOMES_TO_TEST <- 19:21;
 
@@ -20,8 +21,8 @@ DELTA_BETA_THRESHOLD <- .2;
 # `signal B` is the methylated probe
 
 compute.beta <- function(signalA, signalB) {
-	# Note the pseudo count $\\alpha = 1$ to avoid dividing by 0
-	return (signalB / (signalA + signalB + 1));
+	# Note the pseudo count $\alpha = 100$ to avoid dividing by 0
+	return (signalB / (signalA + signalB + ALPHA_PSEUDO_COUNT));
 }
 
 # Get the column corresponding to the required sample

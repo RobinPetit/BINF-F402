@@ -1,0 +1,191 @@
+%\documentclass{IEEEtran}
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{fullpage}
+
+\usepackage{hyperref}
+\usepackage{breakurl}  % break urls at '/' if too long for \textwidth
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{color}
+\usepackage[parfill]{parskip}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{language=R}
+
+\lstset{ %
+  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+  basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  frame=single,	                   % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{blue},       % keyword style
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=1,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{mymauve},     % string literal style
+  tabsize=4,	                     % sets default tabsize to 2 spaces
+}
+
+\title{BINFF-402 --- Genomics, Proteomics and Evolution \\ Assignment 1}
+\author{Robin Petit}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+The Illumina Infinium 450K sequencer~\cite{infinium450} was designed in order to sequence DNA methylation. It works by first applying
+bisulfite transformation to the DNA fragments to transform unmethylated Cytosines to Uracils, and leave methylated Cytosines unchanged,
+and then sequencing uses two different bead types: one to determine methylated loci and one to determine unmethylated
+loci~\cite{weisenberger2008comprehensive}.
+
+The Infinium HumanMethylation450 BeadChip contains over 4.5e5 methylation sites probes, and two different chemical assays: Infinium I and
+Infinium II. In this assignment, only Infinium I is considered. Yet, Infinium II should also be considered in analyses, but
+separately~\cite{dedeurwaerder2011evaluation}.
+
+In this document, methylation level is studied in the case of a DKO of genes DNMT1 and DNMT3b (respectively OMIM ids 126375 and 602900)~\cite{amberger2008OMIM}
+which are both methyltransferases. This double knockout induces a loss of hypermethylated CpG islands which is not present in case of
+single knockout of either of these genes~\cite{paz2003genetic}.
+
+The study has been performed with the R language. Note that all code has been written from scratch even though there is a wide range of
+available packages for bioinformatics in R.~\cite{gentleman2004bioconductor} See for instance the package IMA that is made on purpose
+for Infinium data analysis.~\cite{wang2012ima}
+
+All the R code used for this report can be found at~\url{https://github.com/RobinPetit/BINF-F402}.
+
+\section{Analysis}
+\subsection{$\beta$-value distribution}
+
+\begin{figure*}[!t]
+	\begin{subfigure}{.33\textwidth}
+	\includegraphics[width=\textwidth]{../plots/plot0.eps}
+	\end{subfigure}
+	\begin{subfigure}{.33\textwidth}
+	\includegraphics[width=\textwidth]{../plots/plot1.eps}
+	\end{subfigure}
+	\begin{subfigure}{.33\textwidth}
+	\includegraphics[width=\textwidth]{../plots/plot2.eps}
+	\end{subfigure}
+	\begin{subfigure}{.33\textwidth}
+	\includegraphics[width=\textwidth]{../plots/plot3.eps}
+	\end{subfigure}
+	\begin{subfigure}{.33\textwidth}
+	\includegraphics[width=\textwidth]{../plots/plot4.eps}
+	\end{subfigure}
+	\begin{subfigure}{.33\textwidth}
+	\includegraphics[width=\textwidth]{../plots/plot5.eps}
+	\end{subfigure}
+	\caption{Distribution of the $\beta$ value for each sample. Samples 1 to 3 are the controls, and samples 4 to 6 are the cases.
+	\label{fig:beta-distribution}}
+\end{figure*}
+
+The $\beta$ distribution is shown in~\autoref{fig:beta-distribution}. For each probe, the $\beta$ value is computed to be $\frac M{M+U+\alpha}$,
+where $M$ is the methylated score, $U$ is the unmethylated score, and $\alpha$ acts as a pseudo-count to avoid the case $M=U=0$ to lead
+to a division by zero. This $\alpha$ value has been set to 100~\cite{du2010comparison}.
+
+It is clear that controls have a two-spikes $\beta$ distribution: most probes have a methylation $\beta$-value around 0 or around 1.
+A high methylation $\beta$-value (close to 1) means that almost all of the sequenced cells had a methylated Cytosine at this position,
+whereas a low methylation $\beta$-value (close to 0) means that almost none of the sequenced cells had a methylated Cytosine at this
+position. Yet, as several different cells are sequenced at the same time, it is possible to have a Cytosine that is methylated in
+some cells, but not in others. This explains how $\beta$-value can take so many different values.
+
+It is also clear that cases have a single-spike $\beta$ distribution: most probes have a methylation $\beta$-value close to 0,
+but almost none has a $\beta$-value close to 1. Also, there is a higher density of intermediate $\beta$-values, i.e. between $0.2$
+and $0.8$, which means that there is still methylation happening in the cases, but the methylation of DNA varies from one cell
+to another.
+
+\subsection{Global overview}
+
+
+
+% references
+\newpage
+\bibliographystyle{IEEEtran}
+\bibliography{report}{}
+
+% Second part
+\newpage
+\section{R source code}
+
+First of all, libraries must be imported and constants must be defined. Only two libraries have been used files must be loaded into R:
+
+\begin{lstlisting}
+INFINIUM_PATH  <- 'Infinium450k_raw_data.txt';
+ANNO_MINI_PATH <- 'HumanMethylation450_anno_mini.csv';
+NB_CASES <- 3;
+NB_CONTROLS <- NB_CASES;
+CONTROLS <- 1:NB_CONTROLS;
+CASES <- (1:NB_CASES) + NB_CONTROLS;
+ALPHA_PSEUDO_COUNT <- 100;
+ALL_CHROMOSOMES <- c(1:22, 'X', 'Y');
+CHROMOSOMES_TO_TEST <- 19:21;
+
+# Use first column as row names
+infinium <- read.table(INFINIUM_PATH, header=T, dec=',', row.names=1);
+annotations <- read.table(ANNO_MINI_PATH, header=T, sep=',', row.names=1);
+\end{lstlisting}
+
+In order to determine the $\beta$ value of a sample, let's define a few functions:
+\begin{lstlisting}
+compute.beta <- function(signalA, signalB) {
+	# Note the pseudo count $\alpha = 100$ to avoid dividing by 0
+	return (signalB / (signalA + signalB + ALPHA_PSEUDO_COUNT));
+}
+
+# Get the column corresponding to the required sample
+get.sample.signal <- function(table, sample.id, signalA=T) {
+	if(signalA) {
+		return (as.vector(table[[2*sample.id-1]]));
+	} else {
+		return (as.vector(table[[2*sample.id]]));
+	}
+}
+
+# Returns the $\beta$ values of a given sample
+get.beta <- function(infinium, sample.id) {
+	return (compute.beta(
+		get.sample.signal(infinium, sample.id, T),
+		get.sample.signal(infinium, sample.id, F)
+	));
+}
+\end{lstlisting}
+
+so that plotting becomes:
+\begin{lstlisting}
+plot.beta.distribution.infinium <- function(infinium) {
+	for(sample.id in 1:(NB_CASES+NB_CONTROLS)) {
+		plot(
+			density(get.beta(infinium, sample.id)),
+			xlim=c(-.2, 1.2),
+			ylim=c(0, 5),
+			xlab=TeX('$\\beta$'),
+			ylab=TeX('Density of $\\beta$'),
+			main=TeX(paste('density of $\\beta$ distribution of sample', sample.id)),
+		);
+	}
+}
+plot.beta.distribution.infinium(infinium);
+\end{lstlisting}
+
+\end{document}
