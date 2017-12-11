@@ -3,7 +3,7 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage{fullpage}
+\usepackage[cm]{fullpage}
 
 \usepackage{hyperref}
 \usepackage{breakurl}  % break urls at '/' if too long for \textwidth
@@ -36,7 +36,7 @@
   keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
   keywordstyle=\color{blue},       % keyword style
   numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
-  numbersep=5pt,                   % how far the line-numbers are from the code
+  numbersep=4pt,                   % how far the line-numbers are from the code
   numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
   rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
   showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
@@ -44,7 +44,8 @@
   showtabs=false,                  % show tabs within strings adding particular underscores
   stepnumber=1,                    % the step between two line-numbers. If it's 1, each line will be numbered
   stringstyle=\color{mymauve},     % string literal style
-  tabsize=4,	                     % sets default tabsize to 2 spaces
+  tabsize=2,	                     % sets default tabsize to 2 spaces
+	gobble=1,
 }
 
 \title{BINFF-402 --- Genomics, Proteomics and Evolution \\ Assignment 1}
@@ -117,12 +118,51 @@ to another.
 
 \subsection{Global overview}
 
+An analysis of the methylation level of each chromosome is shown in~\autoref{fig:methylation per chromosome}. We can observe that the
+hypomethylation is present on each chromosome, with highest hypomethylation being on chromosomes 10, 16 and 20 and lowest hypomethylation
+is on chromosome Y, probably because the Y chromosome has a lower methylation level in control samples. Yet, chromosome X is also
+less hypomethylated than the other chromosomes, but sum of difference in methylation level for X and Y chromosomes reaches roughly
+the same value as the other chromosomes.
 
+The distribution of the difference in methylation level per chromosome seems to be pretty uniform between $0.2$ and $0.25$.
 
-% references
-\newpage
-\bibliographystyle{IEEEtran}
-\bibliography{report}{}
+\autoref{fig:methylation 19-21} shows the methylation level of chromosomes 19 to 21 as stated in the instructions.
+
+\begin{figure}[!t]
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot6.eps}
+		\subcaption{Methylation level on each chromosome (1 to 22 plus X and Y).\label{fig:methylation per chromosome}}
+	\end{subfigure}
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot7.eps}
+		\subcaption{Subplot of~\autoref{fig:methylation per chromosome} of chromosomes 19 to 21.\label{fig:methylation 19-21}}
+	\end{subfigure}
+	\caption{General analysis of the methylation level per chromosome for both controls and cases samples. Difference in methylation
+	is defined as control minus case since cases are hypomethylated.}
+\end{figure}
+
+\subsection{Number of probes per gene}
+
+The distribution of the number of probes per gene is shown in~\autoref{fig:number of probes per gene}:~\autoref{fig:histogram of nb probes per gene}
+shows the distribution in which we observe that almost all of the genes have only a few probes related to them, so~\autoref{fig:number of probes per gene}
+shows the same data in y log-scale.
+
+Yet, as displayed on~\autoref{fig:log plot nb probes per gene}, the average number of probes per gene is around $32.36$. This mean value is
+impacted by the very high values that are 2199, 2404, and 3897, but since only one such gene exist for each of these values, the impact is
+very low, due to the big amount of probes: 485577 (computed by either \texttt{nrow(infinium)} in the R code, or by \texttt{wc -l annotations.csv}
+minus 1 to remove the header).
+
+\begin{figure}[!b]
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot8.eps}
+		\subcaption{Distribution of the number of probes per gene.\label{fig:histogram of nb probes per gene}}
+	\end{subfigure}
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot9.eps}
+		\caption{Log-distribution of the number of probes per gene.\label{fig:log plot nb probes per gene}}
+	\end{subfigure}
+	\caption{Distribution of the number of probes per gene in both linear and log scale.\label{fig:number of probes per gene}}
+\end{figure}
 
 % Second part
 \newpage
@@ -131,61 +171,118 @@ to another.
 First of all, libraries must be imported and constants must be defined. Only two libraries have been used files must be loaded into R:
 
 \begin{lstlisting}
-INFINIUM_PATH  <- 'Infinium450k_raw_data.txt';
-ANNO_MINI_PATH <- 'HumanMethylation450_anno_mini.csv';
-NB_CASES <- 3;
-NB_CONTROLS <- NB_CASES;
-CONTROLS <- 1:NB_CONTROLS;
-CASES <- (1:NB_CASES) + NB_CONTROLS;
-ALPHA_PSEUDO_COUNT <- 100;
-ALL_CHROMOSOMES <- c(1:22, 'X', 'Y');
-CHROMOSOMES_TO_TEST <- 19:21;
+	INFINIUM_PATH  <- 'Infinium450k_raw_data.txt';
+	ANNO_MINI_PATH <- 'HumanMethylation450_anno_mini.csv';
+	NB_CASES <- 3;
+	NB_CONTROLS <- NB_CASES;
+	CONTROLS <- 1:NB_CONTROLS;
+	CASES <- (1:NB_CASES) + NB_CONTROLS;
+	ALPHA_PSEUDO_COUNT <- 100;
+	ALL_CHROMOSOMES <- c(1:22, 'X', 'Y');
+	CHROMOSOMES_TO_TEST <- 19:21;
 
-# Use first column as row names
-infinium <- read.table(INFINIUM_PATH, header=T, dec=',', row.names=1);
-annotations <- read.table(ANNO_MINI_PATH, header=T, sep=',', row.names=1);
+	# Use first column as row names
+	infinium <- read.table(INFINIUM_PATH, header=T, dec=',', row.names=1);
+	annotations <- read.table(ANNO_MINI_PATH, header=T, sep=',', row.names=1);
 \end{lstlisting}
 
 In order to determine the $\beta$ value of a sample, let's define a few functions:
 \begin{lstlisting}
-compute.beta <- function(signalA, signalB) {
-	# Note the pseudo count $\alpha = 100$ to avoid dividing by 0
-	return (signalB / (signalA + signalB + ALPHA_PSEUDO_COUNT));
-}
-
-# Get the column corresponding to the required sample
-get.sample.signal <- function(table, sample.id, signalA=T) {
-	if(signalA) {
-		return (as.vector(table[[2*sample.id-1]]));
-	} else {
-		return (as.vector(table[[2*sample.id]]));
+	compute.beta <- function(signalA, signalB) {
+		# Note the pseudo count $\alpha = 100$ to avoid dividing by 0
+		return (signalB / (signalA + signalB + ALPHA_PSEUDO_COUNT));
 	}
-}
 
-# Returns the $\beta$ values of a given sample
-get.beta <- function(infinium, sample.id) {
-	return (compute.beta(
-		get.sample.signal(infinium, sample.id, T),
-		get.sample.signal(infinium, sample.id, F)
-	));
-}
+	# Get the column corresponding to the required sample
+	get.sample.signal <- function(table, sample.id, signalA=T) {
+		if(signalA) {
+			return (as.vector(table[[2*sample.id-1]]));
+		} else {
+			return (as.vector(table[[2*sample.id]]));
+		}
+	}
+
+	# Returns the $\beta$ values of a given sample
+	get.beta <- function(infinium, sample.id) {
+		return (compute.beta(
+			get.sample.signal(infinium, sample.id, T),
+			get.sample.signal(infinium, sample.id, F)
+		));
+	}
 \end{lstlisting}
 
 so that plotting becomes:
 \begin{lstlisting}
-plot.beta.distribution.infinium <- function(infinium) {
-	for(sample.id in 1:(NB_CASES+NB_CONTROLS)) {
-		plot(
-			density(get.beta(infinium, sample.id)),
-			xlim=c(-.2, 1.2),
-			ylim=c(0, 5),
-			xlab=TeX('$\\beta$'),
-			ylab=TeX('Density of $\\beta$'),
-			main=TeX(paste('density of $\\beta$ distribution of sample', sample.id)),
-		);
+	# Plot the beta distribution of each sample from 1 to 6
+	plot.beta.distribution.infinium <- function(infinium) {
+		for(sample.id in 1:(NB_CASES+NB_CONTROLS)) {
+			plot(
+				density(get.beta(infinium, sample.id)),
+				xlim=c(-.2, 1.2),
+				ylim=c(0, 5),
+				xlab=TeX('$\\beta$'),
+				ylab=TeX('Density of $\\beta$'),
+				main=TeX(paste('density of $\\beta$ distribution of sample', sample.id)),
+			);
+		}
 	}
-}
-plot.beta.distribution.infinium(infinium);
+	plot.beta.distribution.infinium(infinium);
 \end{lstlisting}
+
+The methylation level per chromosome is performed as follows:
+\begin{lstlisting}
+	# Returns the subtable corresponding to the required chromosome
+	extract.chromosome <- function(annotations, chr) {
+		return (annotations[annotations$CHR == chr,]);
+	}
+
+	# Make the barplots of the average methylation level of each chromosome
+	plot.mean.methylation.level <- function(infinium, annotations) {
+		means <- matrix(rep(0, 3*length(ALL_CHROMOSOMES)), nrow=3, ncol=length(ALL_CHROMOSOMES));
+		idx <- 1;
+		for(chromosome in ALL_CHROMOSOMES) {
+			intersection <- intersect(rownames(infinium), rownames(extract.chromosome(annotations, chromosome)));
+			chromosome.infinium.subtable <- infinium[intersection,];
+			for(case.sample.id in CASES)
+				means[1,idx] <- means[1,idx] + mean(get.beta(chromosome.infinium.subtable, case.sample.id))/NB_CASES;
+			for(control.sample.id in CONTROLS)
+				means[2,idx] <- means[2,idx] + mean(get.beta(chromosome.infinium.subtable, control.sample.id))/NB_CONTROLS;
+			# Take difference control - case to see methylation difference per chromosome
+			means[3,] <- means[2,] - means[1,];
+			idx <- idx+1;
+		}
+		barplot(means, names.arg=ALL_CHROMOSOMES, horiz=T, beside=T, legend=c('Cases', 'Controls', 'Difference'), las=1);
+		barplot(means[,CHROMOSOMES_TO_TEST], names.arg=CHROMOSOMES_TO_TEST, beside=T, legend=c('Cases', 'Controls', 'Difference'), las=1);
+	}
+
+
+	plot.mean.methylation.level(infinium, annotations);
+\end{lstlisting}
+
+To find the number of probes per gene, only annotations are required since all ids are common to the infinium file and the annotations file:
+\begin{lstlisting}
+	# Plot the histograms of the distribution and log-distribution of the number of probes per gene
+	plot.number.of.genes.per.probe <- function(annotations) {
+		non.null.genes.associations <- as.vector(annotations[annotations$UCSC_RefGene_Name != '',]$UCSC_RefGene_Name);
+		genes.counter <- table(unlist(sapply(non.null.genes.associations, function(s) {unique(strsplit(s, ';'))})));
+		hist(genes.counter, main='Distribution of the number of probes per gene',
+			sub=sprintf('Average number of probes per gene is %g', mean(genes.counter)),
+			xlab='Number of probes per gene',
+			ylab='Frequency');
+		plot(log(table(genes.counter)), main='log plot of the distribution of the number of probes per gene',
+			xlab='Number of probes per gene',
+			ylab='log(Frequency)');
+	}
+\end{lstlisting}
+
+Note that \texttt{function(s) {unique(strsplit(s, ';'))}} allows to retrieve all the genes associated to a probe, but not taking
+the genes that come several times, thanks to the \texttt{unique} function. Making a table of the unlisted results (since
+\texttt{sapply} returns a list) makes R count the number of probes related to each gene on its own. Therefore, making a histogram
+of the table is sufficient to plot the distribution.
+
+% references
+\newpage
+\bibliographystyle{IEEEtran}
+\bibliography{report}{}
 
 \end{document}
