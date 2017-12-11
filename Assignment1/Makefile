@@ -1,7 +1,7 @@
 NB_PLOTS=20
 LAST_PLOT_IDX=$(shell expr $(NB_PLOTS) - 1)
 INDICES=$(shell seq 0 $(LAST_PLOT_IDX))
-DENSITY=100
+DENSITY=500
 
 plots: Rplots.pdf
 	for idx in $(INDICES); do \
