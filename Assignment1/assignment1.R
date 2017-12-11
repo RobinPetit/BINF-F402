@@ -63,7 +63,7 @@ extract.chromosome <- function(annotations, chr) {
 
 # Make the barplots of the average methylation level of each chromosome
 plot.mean.methylation.level <- function(infinium, annotations) {
-	means <- matrix(rep(0, 2*length(ALL_CHROMOSOMES)), nrow=2, ncol=length(ALL_CHROMOSOMES));
+	means <- matrix(rep(0, 3*length(ALL_CHROMOSOMES)), nrow=3, ncol=length(ALL_CHROMOSOMES));
 	idx <- 1;
 	for(chromosome in ALL_CHROMOSOMES) {
 		intersection <- intersect(rownames(infinium), rownames(extract.chromosome(annotations, chromosome)));
@@ -72,10 +72,12 @@ plot.mean.methylation.level <- function(infinium, annotations) {
 			means[1,idx] <- means[1,idx] + mean(get.beta(chromosome.infinium.subtable, case.sample.id))/NB_CASES;
 		for(control.sample.id in CONTROLS)
 			means[2,idx] <- means[2,idx] + mean(get.beta(chromosome.infinium.subtable, control.sample.id))/NB_CONTROLS;
+		# Take difference control - case to see methylation difference per chromosome
+		means[3,] <- means[2,] - means[1,];
 		idx <- idx+1;
 	}
-	barplot(means, names.arg=ALL_CHROMOSOMES, horiz=T, beside=T, legend=c('Cases', 'Controls'), las=1);
-	barplot(means[,CHROMOSOMES_TO_TEST], names.arg=CHROMOSOMES_TO_TEST, beside=T, legend=c('Cases', 'Controls'), las=1);
+	barplot(means, names.arg=ALL_CHROMOSOMES, horiz=T, beside=T, legend=c('Cases', 'Controls', 'Difference'), las=1);
+	barplot(means[,CHROMOSOMES_TO_TEST], names.arg=CHROMOSOMES_TO_TEST, beside=T, legend=c('Cases', 'Controls', 'Difference'), las=1);
 }
 
 # Plot the histograms of the distribution and log-distribution of the number of probes per gene
