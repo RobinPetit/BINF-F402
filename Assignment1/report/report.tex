@@ -5,7 +5,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[cm]{fullpage}
 
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{breakurl}  % break urls at '/' if too long for \textwidth
 \usepackage{caption}
 \usepackage{subcaption}
@@ -15,6 +15,7 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage[parfill]{parskip}
+\usepackage{commath}
 
 \definecolor{mygreen}{rgb}{0,0.6,0}
 \definecolor{mygray}{rgb}{0.5,0.5,0.5}
@@ -59,19 +60,19 @@
 The Illumina Infinium 450K sequencer~\cite{infinium450} was designed in order to sequence DNA methylation. It works by first applying
 bisulfite transformation to the DNA fragments to transform unmethylated Cytosines to Uracils, and leave methylated Cytosines unchanged,
 and then sequencing uses two different bead types: one to determine methylated loci and one to determine unmethylated
-loci~\cite{weisenberger2008comprehensive}.
+loci.~\cite{weisenberger2008comprehensive}
 
 The Infinium HumanMethylation450 BeadChip contains over 4.5e5 methylation sites probes, and two different chemical assays: Infinium I and
 Infinium II. In this assignment, only Infinium I is considered. Yet, Infinium II should also be considered in analyses, but
-separately~\cite{dedeurwaerder2011evaluation}.
+separately.~\cite{dedeurwaerder2011evaluation}
 
 In this document, methylation level is studied in the case of a DKO of genes DNMT1 and DNMT3b (respectively OMIM ids 126375 and 602900)~\cite{amberger2008OMIM}
 which are both methyltransferases. This double knockout induces a loss of hypermethylated CpG islands which is not present in case of
-single knockout of either of these genes~\cite{paz2003genetic}.
+single knockout of either of these genes.~\cite{paz2003genetic}
 
 The study has been performed with the R language. Note that all code has been written from scratch even though there is a wide range of
-available packages for bioinformatics in R.~\cite{gentleman2004bioconductor} See for instance the package IMA that is made on purpose
-for Infinium data analysis.~\cite{wang2012ima}
+available packages for bioinformatics in R~\cite{gentleman2004bioconductor}. See for instance the package IMA that is made on purpose
+for Infinium data analysis~\cite{wang2012ima}.
 
 All the R code used for this report can be found at~\url{https://github.com/RobinPetit/BINF-F402}.
 
@@ -103,7 +104,7 @@ All the R code used for this report can be found at~\url{https://github.com/Robi
 
 The $\beta$ distribution is shown in~\autoref{fig:beta-distribution}. For each probe, the $\beta$ value is computed to be $\frac M{M+U+\alpha}$,
 where $M$ is the methylated score, $U$ is the unmethylated score, and $\alpha$ acts as a pseudo-count to avoid the case $M=U=0$ to lead
-to a division by zero. This $\alpha$ value has been set to 100~\cite{du2010comparison}.
+to a division by zero. This $\alpha$ value has been set to 100.~\cite{du2010comparison}
 
 It is clear that controls have a two-spikes $\beta$ distribution: most probes have a methylation $\beta$-value around 0 or around 1.
 A high methylation $\beta$-value (close to 1) means that almost all of the sequenced cells had a methylated Cytosine at this position,
@@ -118,7 +119,7 @@ to another.
 
 \subsection{Global overview}
 
-An analysis of the methylation level of each chromosome is shown in~\autoref{fig:methylation per chromosome}. We can observe that the
+An analysis of the methylation level of each chromosome is shown in~\autoref{fig:methylation all chromosome}. We can observe that the
 hypomethylation is present on each chromosome, with highest hypomethylation being on chromosomes 10, 16 and 20 and lowest hypomethylation
 is on chromosome Y, probably because the Y chromosome has a lower methylation level in control samples. Yet, chromosome X is also
 less hypomethylated than the other chromosomes, but sum of difference in methylation level for X and Y chromosomes reaches roughly
@@ -131,14 +132,14 @@ The distribution of the difference in methylation level per chromosome seems to 
 \begin{figure}[!t]
 	\begin{subfigure}{.5\textwidth}
 		\includegraphics[width=\textwidth]{../plots/plot6.eps}
-		\subcaption{Methylation level on each chromosome (1 to 22 plus X and Y).\label{fig:methylation per chromosome}}
+		\subcaption{Methylation level on each chromosome (1 to 22 plus X and Y).\label{fig:methylation all chromosome}}
 	\end{subfigure}
 	\begin{subfigure}{.5\textwidth}
 		\includegraphics[width=\textwidth]{../plots/plot7.eps}
 		\subcaption{Subplot of~\autoref{fig:methylation per chromosome} of chromosomes 19 to 21.\label{fig:methylation 19-21}}
 	\end{subfigure}
 	\caption{General analysis of the methylation level per chromosome for both controls and cases samples. Difference in methylation
-	is defined as control minus case since cases are hypomethylated.}
+	is defined as control minus case since cases are hypomethylated.\label{fig:methylation per chromosome}}
 \end{figure}
 
 \subsection{Number of probes per gene}
@@ -164,6 +165,98 @@ minus 1 to remove the header).
 	\caption{Distribution of the number of probes per gene in both linear and log scale.\label{fig:number of probes per gene}}
 \end{figure}
 
+\subsection{$\Delta\beta$}
+
+\begin{figure}[!b]
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot10.eps}
+	\end{subfigure}
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot11.eps}
+	\end{subfigure}
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot12.eps}
+	\end{subfigure}
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot13.eps}
+	\end{subfigure}
+	\caption{Distribution of $\Delta\beta$ for each couple control/case and in average.\label{fig:delta beta}}
+\end{figure}
+
+The distribution of $\Delta\beta$ (control - case) is shown in~\autoref{fig:delta beta}. The three first subplots represent the $\Delta\beta$
+distribution of each couple (control, case), but the most interesting part is the last subplot showing the $\Delta\beta$ in average for each
+control and each case sample. We observe no hypermethylation ($\Delta\beta > 0$) but a clear hypomothylation ($\Delta\beta < 0$) as expected.
+
+Still, most of the probability mass is around $\Delta\beta = 0$. This comes from the fact that even though case samples are hypomethylated,
+they still contain methlyated regions (see~\autoref{fig:beta-distribution} and \autoref{fig:methylation per chromosome}),
+for which $\Delta\beta$ is close to 0.
+
+\subsection{$p$-values and volcano plot}
+
+$p$-value of the $\Delta\beta$ value for each probe have been computed by performing a Student $t$-test. Their distribution is shown
+in~\autoref{fig:p value distribution}. As can be seen on~\autoref{fig:distribution of log p value}, many probes have high $p$-value (around
+$10^{\frac {-1}2}$) which is far from significant, but still a big part is below $10^{-3}$.
+
+Note that a $t$-test takes variance into consideration, meaning that a high $\Delta\beta$ might not be significant if variance is high
+inside the groups.
+
+\begin{figure}[!h]
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot14.eps}
+		\caption{Distribution of $p$-value.\label{fig:distribution of p values}}
+	\end{subfigure}
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot15.eps}
+		\caption{Distribution of base 10 log $p$-value.\label{fig:distribution of log p value}}
+	\end{subfigure}
+	\caption{Distribution of $p$-value and $\log_{10}(p$-value$)$.\label{fig:p value distribution}}
+\end{figure}
+
+\autoref{fig:volcano} plots $\Delta\beta$ and $p$-values in a volcano plot. We can observe a big portion of the probes in the upper
+right area of the plot, meaning significant $\Delta\beta$ of hypomethylation, but we can also observe the upper left area of the plot
+showing significant $\Delta\beta$ of hypermethylation.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{../plots/plot16.eps}
+	\caption{Volcano plot of $p$-value according to $\Delta\beta$. Significance threshold for $p$-values is set to $p = 10^{-3}$, and for
+	$\abs {\Delta\beta} = .2$. Note that even though the study here is about hypomethylated cases ($\Delta\beta > 0$), several probes lie
+	before $\Delta\beta = -.2$, meaning that some regions are hypermethylated (even \textit{significantly} hypermethylated).
+	\label{fig:volcano}}
+\end{figure}
+
+\subsection{Heatmap}
+
+When taking the top 30 probes according to $\abs {\Delta\beta}$, we can plot them in a heatmap (see~\autoref{fig:heatmap}).
+Separate plots for methylated and unmethylated probes are shown in~\autoref{fig:heatmap separated}.
+
+For the 3 first samples (i.e. the controls), we can see that the unmethylated probes received way less signals than the
+methylated ones, and that this tendency is reversed for the 3 last samples (i.e. the cases). This is as expected since the
+probes that are present in this plot are the ones with the highest $\Delta\beta$ value, meaning that the difference between
+the methylation level in the controls and in the cases is the highest. Therefore, it is expected to have highly methylated
+controls and highly unmethylated cases signals.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=.5\textwidth]{../plots/plot17.eps}
+\caption{Heatmap of the probes value of the 30 probes having the highest average $\Delta\beta$.
+\label{fig:heatmap}}
+\end{figure}
+
+\begin{figure}
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot18.eps}
+		\caption{Heatmap of the unmethylated probes value of the 30 probes having the highest $\Delta\beta$.
+		\label{fig:heatmap unmethylated}}
+	\end{subfigure}
+	\begin{subfigure}{.5\textwidth}
+		\includegraphics[width=\textwidth]{../plots/plot19.eps}
+		\caption{Heatmap of the methylated probes value of the 30 probes having the highest $\Delta\beta$.
+		\label{fig;heatmap methylated}}
+	\end{subfigure}
+	\caption{Separate heatmaps for methylated and unmethylated probes of the top 30 probes.\label{fig:heatmap separated}}
+\end{figure}
+
 % Second part
 \newpage
 \section{R source code}
@@ -171,6 +264,9 @@ minus 1 to remove the header).
 First of all, libraries must be imported and constants must be defined. Only two libraries have been used files must be loaded into R:
 
 \begin{lstlisting}
+	library('latex2exp');  # Lib necessary to use LaTeX in plots
+	library('gplots');     # for heatmap.2
+
 	INFINIUM_PATH  <- 'Infinium450k_raw_data.txt';
 	ANNO_MINI_PATH <- 'HumanMethylation450_anno_mini.csv';
 	NB_CASES <- 3;
@@ -180,6 +276,9 @@ First of all, libraries must be imported and constants must be defined. Only two
 	ALPHA_PSEUDO_COUNT <- 100;
 	ALL_CHROMOSOMES <- c(1:22, 'X', 'Y');
 	CHROMOSOMES_TO_TEST <- 19:21;
+
+	LOG_P_VALUE_THRESHOLD <- -3;
+	DELTA_BETA_THRESHOLD <- .2;
 
 	# Use first column as row names
 	infinium <- read.table(INFINIUM_PATH, header=T, dec=',', row.names=1);
@@ -279,6 +378,115 @@ Note that \texttt{function(s) {unique(strsplit(s, ';'))}} allows to retrieve all
 the genes that come several times, thanks to the \texttt{unique} function. Making a table of the unlisted results (since
 \texttt{sapply} returns a list) makes R count the number of probes related to each gene on its own. Therefore, making a histogram
 of the table is sufficient to plot the distribution.
+
+$\Delta\beta$ distribution is computed and plotted as follows:
+\begin{lstlisting}
+	# Get the $\Delta\beta$ vector of a (control, sample) couple
+	get.delta.beta <- function(infinium, case.sample.id, control.sample.id) {
+		return (get.beta(infinium, control.sample.id) - get.beta(infinium, case.sample.id));
+	}
+
+	# Plots the density of $\Delta\beta$ for each (control, sample) couple
+	plot.delta.beta.distribution <- function(infinium) {
+		# plot \Delta \beta distribution for each couple control/case
+		for(control.sample.id in CONTROLS) {
+			case.sample.id <- control.sample.id + NB_CONTROLS;
+			infinium$de
+			plot(
+				density(get.delta.beta(infinium, case.sample.id, control.sample.id)),
+				main=TeX(sprintf('$\\Delta\\beta$ (control - case) for couple #%d', control.sample.id)),
+				xlab=TeX('$\\Delta\\beta$'),
+				ylab='Density',
+				xlim=c(-1, 1),
+				ylim=c(0, 5.5)
+			);
+		}
+		# Plot \Delta \beta for the mean of all samples
+		delta.betas <- matrix(0, nrow=nrow(infinium), ncol=NB_CONTROLS+NB_CASES);
+		for(control.sample.id in CONTROLS) {
+			delta.betas[,control.sample.id] <- get.beta(infinium, control.sample.id);
+			case.sample.id <- control.sample.id + NB_CONTROLS;
+			delta.betas[,case.sample.id] <- get.beta(infinium, case.sample.id);
+		}
+		infinium$delta.beta <- apply(delta.betas[,CONTROLS], 1, mean) - apply(delta.betas[,CASES], 1, mean);
+		plot(
+			density(infinium$delta.beta),
+			main=TeX('mean $\\Delta\\beta$ (controls - cases)'),
+			xlab=TeX('$\\Delta\\beta$'),
+			ylab='Density',
+			xlim=c(-1, 1),
+			ylim=c(0, 5.5)
+		);
+		infinium$p.values <- apply(delta.betas, 1,
+			function(row) {
+				return (t.test(row[CONTROLS], row[CASES])$p.value);
+			}
+		);
+		infinium$log.p.value <- log(infinium$p.value, 10);
+		plot(
+			density(infinium$p.values),
+			main=TeX('$p$-value density'),
+			xlab=TeX('$p$-value'),
+			ylab='density'
+		);
+		plot(
+			density(-infinium$log.p.value),
+			main=TeX('$-\\log_{10}(p$-value$)$ density'),
+			xlab=TeX('$-\\log_{10}(p$-value$)$'),
+			ylab='density'
+		);
+		return (infinium);
+	}
+
+	infinium <- plot.delta.beta.distribution(infinium);
+\end{lstlisting}
+
+Note that as \texttt{plot.delta.beta.distribution} returns the \texttt{infinium} table since it has been modified
+and R does not allow passing parameters by reference. What is added to the table is the $p$-value of $\Delta\beta$
+for each probe (computed by a $t$-test), that is also plotted.
+
+With these $p$-values, the volcano plot is performed using:
+\begin{lstlisting}
+	plot.volcano <- function(infinium) {
+		significant.idx <- as.logical((abs(infinium$delta.beta) >= .2) * (infinium$log.p.value <= -3));
+		significant <- infinium[significant.idx,];
+		non.significant <- infinium[!significant.idx,];
+		plot(
+			c(non.significant$delta.beta, significant$delta.beta),
+			-c(non.significant$log.p.value, significant$log.p.value),
+			col=c(rep('black', nrow(non.significant)), rep('red', nrow(significant))),
+			xlab=TeX('$\\Delta\\beta$'),
+			ylab=TeX('$-\\log_{10}(p$-value$)$')
+		)
+		lines(c(min(infinium$delta.beta), max(infinium$delta.beta)), rep(-LOG_P_VALUE_THRESHOLD, 2), col='grey', lty=2)
+		lines(rep(DELTA_BETA_THRESHOLD, 2), c(min(-infinium$log.p.value), max(-infinium$log.p.value)), col='grey', lty=2)
+		lines(rep(-DELTA_BETA_THRESHOLD, 2), c(min(-infinium$log.p.value), max(-infinium$log.p.value)), col='grey', lty=2)
+	}
+
+	plot.volcano(infinium);
+\end{lstlisting}
+
+Only the heatmaps are still missing. These are plotted as follows:
+\begin{lstlisting}
+	get.top.delta.beta <- function(infinium, n=30) {
+		return (infinium[order(abs(infinium$delta.beta), decreasing=T)[1:n],]);
+	}
+
+	plot.heatmap <- function(infinium) {
+		top <- get.top.delta.beta(infinium);
+		par(mar=c(0, 1, 3, 1))
+		heatmap.2(t(as.matrix(top[,1:(2*(NB_CONTROLS+NB_CASES))])), Rowv=NA, Colv=NA, scale='none', cexRow=.8, cexCol=.75,
+			margins=c(6, 8), dendogram='none', trace='none');
+		for(i in 1:2) {
+			heatmap.2(t(as.matrix(top[,seq(i, 2*(NB_CONTROLS+NB_CASES),2)])), Rowv=NA, Colv=NA, scale='none', cexRow=.8, cexCol=.75,
+				margins=c(6, 8), dendogram='none', trace='none');
+		}
+	}
+
+	plot.heatmap(infinium);
+\end{lstlisting}
+
+Note that \texttt{heatmap.2} is used, which explains the \texttt{library('gplots');} above.
 
 % references
 \newpage
