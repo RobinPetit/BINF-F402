@@ -23,3 +23,6 @@ instructions/*
 
 # R related
 Rplots.pdf
+
+# minimap/miniasm
+*.paf
