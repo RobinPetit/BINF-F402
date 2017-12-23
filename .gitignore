@@ -16,6 +16,12 @@
 *.dvi
 *.blg
 *.out
+*.pdf
+
+# Images
+*.jpg
+*.png
+*.eps
 
 # Directories
 Assignment1/plots
